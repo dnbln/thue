@@ -1,31 +1,33 @@
 use std::io::stdin;
+
+use rand::prelude::*;
+use rand::seq::IndexedRandom;
+
 use crate::rules::*;
 use crate::parser::ThueProgram;
 
 pub fn run_program (tp: ThueProgram) {
-    let mut changed = true;
     let mut output = tp.input.clone();
 
-    while changed {
-        changed = false;
-        for rule in &tp.rules {
-            if output.contains(&rule.left) {
-                changed = true
-            } else { continue }
+    let mut rng = rand::rng();
 
-            let mut repl = rule.right.clone();
-            if rule.special == SpecialType::Output {
-                // If the rule is empty, output a newline
-                print!("{}", if rule.right != "" {
-                    rule.right.clone()
-                } else { String::from("\n") });
-                repl = String::from("");
-            }
-            if rule.special == SpecialType::Input {
-                repl = readline()
-            }
-            output = output.replace(&rule.left, &repl);
+    loop {
+        let matching_rules = tp.rules.iter().filter(|it| output.contains(&it.left)).collect::<Vec<_>>();
+        let Some(rule) = matching_rules.choose(&mut rng) else {
+            break;
+        };
+        let mut repl = rule.right.clone();
+        if rule.special == SpecialType::Output {
+            // If the rule is empty, output a newline
+            print!("{}", if rule.right != "" {
+                rule.right.clone()
+            } else { String::from("\n") });
+            repl = String::from("");
         }
+        if rule.special == SpecialType::Input {
+            repl = readline()
+        }
+        output = output.replace(&rule.left, &repl);
     }
 
     println!("\nFinal string:\n{}", output);
